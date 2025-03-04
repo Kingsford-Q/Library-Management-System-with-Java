@@ -1,0 +1,100 @@
+/* 🔹 Root Container */
+.root {
+    -fx-background-color: linear-gradient(to bottom, #E3F2FD, #BBDEFB);
+    -fx-font-family: "Poppins", "Segoe UI", sans-serif;
+}
+
+/* 🔹 Section Titles */
+.title {
+    -fx-fill: #222831;
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+}
+
+/* 🔹 Main Container (for better UI structure) */
+.main-container {
+    -fx-background-color: #FFFFFF;
+    -fx-padding: 30px;
+    -fx-border-radius: 15px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.1), 8, 0, 0, 4);
+}
+
+/* 🔹 Text Fields */
+.text-field {
+    -fx-background-color: #FAFAFA;
+    -fx-text-fill: #333333;
+    -fx-prompt-text-fill: #9E9E9E;
+    -fx-border-color: #BDBDBD;
+    -fx-border-radius: 10px;
+    -fx-padding: 12px;
+    -fx-font-size: 14px;
+}
+
+.text-field:focused {
+    -fx-border-color: #1976D2;
+    -fx-background-color: #FFFFFF;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.1), 5, 0, 0, 2);
+}
+
+/* 🔹 Buttons */
+.primary-button {
+    -fx-background-color: #1976D2;
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: 600;
+    -fx-border-radius: 12px;
+    -fx-padding: 12px 24px;
+    -fx-cursor: hand;
+}
+
+.primary-button:hover {
+    -fx-background-color: #1565C0;
+}
+
+.secondary-button {
+    -fx-background-color: #26A69A;
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: 600;
+    -fx-border-radius: 12px;
+    -fx-padding: 12px 24px;
+}
+
+.secondary-button:hover {
+    -fx-background-color: #1E8E85;
+}
+
+.delete-button {
+    -fx-background-color: #E53935;
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: 600;
+    -fx-border-radius: 12px;
+    -fx-padding: 12px 24px;
+}
+
+.delete-button:hover {
+    -fx-background-color: #C62828;
+}
+
+/* 🔹 ListView */
+.list-view {
+    -fx-background-color: #FAFAFA;
+    -fx-border-color: #E0E0E0;
+    -fx-border-radius: 12px;
+    -fx-padding: 10px;
+}
+
+.list-cell {
+    -fx-text-fill: #37474F;
+    -fx-padding: 12px;
+}
+
+.list-cell:hover {
+    -fx-background-color: #E3F2FD;
+}
+
+.list-cell:selected {
+    -fx-background-color: #1976D2;
+    -fx-text-fill: white;
+}
