@@ -45,19 +45,27 @@ public class BookService {
     public static String addBook(String title, String author, String isbn, String category) {
         try {
             String bookData = "{ \"title\": \"" + title + "\", \"author\": \"" + author + "\", \"isbn\": \"" + isbn + "\", \"category\": \"" + category + "\" }";
-
+    
+            System.out.println("Sending request to: " + BASE_URL);
+            System.out.println("Payload: " + bookData);
+    
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(BASE_URL))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(bookData))
                     .build();
-
+    
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
+    
+            // Print response status and body
+            System.out.println("Response Code: " + response.statusCode());
+            System.out.println("Response Body: " + response.body());
+    
             if (response.statusCode() == 201) {
                 return response.body();
             } else {
+                System.out.println("Book addition failed. Status Code: " + response.statusCode());
                 return null;
             }
         } catch (IOException | InterruptedException e) {
@@ -65,24 +73,33 @@ public class BookService {
             return null;
         }
     }
+    
+    
 
     @SuppressWarnings("CallToPrintStackTrace")
-    public static String editBook(String oldIsbn, String title, String author, String isbn, String category) {
+    public static String editBook(String bookId, String title, String author, String isbn, String category) {
         try {
-            String bookData = "{ \"title\": \"" + title + "\", \"author\": \"" + author + "\", \"isbn\": \"" + isbn + "\", \"category\": \"" + category + "\" }";
-
+            // Manually constructing the JSON string
+            String bookData = "{"
+                    + "\"title\": \"" + title + "\","
+                    + "\"author\": \"" + author + "\","
+                    + "\"isbn\": \"" + isbn + "\","
+                    + "\"category\": \"" + category + "\""
+                    + "}";
+    
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/" + oldIsbn))
+                    .uri(URI.create(BASE_URL + "/" + bookId)) // Ensure you're using the correct ID
                     .header("Content-Type", "application/json")
                     .PUT(HttpRequest.BodyPublishers.ofString(bookData))
                     .build();
-
+    
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
+    
             if (response.statusCode() == 200) {
                 return response.body();
             } else {
+                System.err.println("Error updating book: " + response.body());
                 return null;
             }
         } catch (IOException | InterruptedException e) {
@@ -90,18 +107,23 @@ public class BookService {
             return null;
         }
     }
+    
 
     @SuppressWarnings("CallToPrintStackTrace")
-    public static String deleteBook(String isbn) {
+    public static String deleteBook(String id) {
         try {
+            // Ensure the id is properly formatted
+            String bookUrl = BASE_URL + "/" + id;
+    
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL + "/" + isbn))
+                    .uri(URI.create(bookUrl))
+                    .header("Content-Type", "application/json")
                     .DELETE()
                     .build();
-
+    
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
+    
             if (response.statusCode() == 200) {
                 return response.body();
             } else {
@@ -112,4 +134,5 @@ public class BookService {
             return null;
         }
     }
+    
 }

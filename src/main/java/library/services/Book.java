@@ -4,6 +4,9 @@ import com.google.gson.annotations.Expose;
 
 public class Book {
     @Expose
+    private String _id;  // MongoDB ObjectId
+    
+    @Expose
     private String title;
     
     @Expose
@@ -16,6 +19,14 @@ public class Book {
     private String category;
 
     // Getters and Setters
+    public String getId() { // Getter for _id
+        return _id;
+    }
+
+    public void setId(String id) {
+        this._id = id;
+    }
+
     public String getTitle() {
         return title;
     }
@@ -50,6 +61,6 @@ public class Book {
 
     @Override
     public String toString() {
-        return title + "; " + author + "; " + isbn + "; " + category;
+        return _id + "; " + title + "; " + author + "; " + isbn + "; " + category;
     }
 }

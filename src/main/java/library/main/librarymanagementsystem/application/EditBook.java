@@ -58,10 +58,11 @@ public class EditBook {
 
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == confirm) {
-                return author.getText() + ";" + title.getText() + ";" + isbn.getText() + ";" + category.getText();
+                return title.getText() + ";" + author.getText() + ";" + isbn.getText() + ";" + category.getText();
             }
             return null;
         });
+        
 
         Optional<String> rslt = dialog.showAndWait();
         if (rslt.isPresent() ) {
