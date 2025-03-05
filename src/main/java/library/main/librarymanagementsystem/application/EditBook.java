@@ -11,7 +11,7 @@ import java.util.Optional;
 
 public class EditBook {
 
-    private String result;
+    private final String result;
 
     public String getResult() {
         return this.result;
