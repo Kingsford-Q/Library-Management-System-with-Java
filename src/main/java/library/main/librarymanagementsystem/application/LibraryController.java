@@ -95,82 +95,102 @@ public class LibraryController implements Initializable {
     protected void editBook() throws IOException {
         ObservableList<Integer> selectedIndices = booksList.getSelectionModel().getSelectedIndices();
         
-        if (selectedIndices.size() == 1) {
-            String bookToEdit = booksList.getItems().get(selectedIndices.get(0));
+        if (selectedIndices.size() != 1) {
+            System.out.println("Error: No book selected for editing.");
+            return;
+        }
     
-            if (bookToEdit == null || !bookToEdit.contains(";")) {
-                System.out.println("Error: Invalid book format.");
-                return;
-            }
+        String bookToEdit = booksList.getItems().get(selectedIndices.get(0));
     
-            String[] bookDetails = bookToEdit.split(";");
-            if (bookDetails.length < 4) {
-                System.out.println("Error: Book data is incomplete.");
-                return;
-            }
+        if (bookToEdit == null || !bookToEdit.contains(";")) {
+            System.out.println("Error: Invalid book format.");
+            return;
+        }
     
-            String titleToEdit = bookDetails[0].trim();
-            String authorToEdit = bookDetails[1].trim();
-            String isbnToEdit = bookDetails[2].trim();
-            String categoryToEdit = bookDetails[3].trim();
+        String[] bookDetails = bookToEdit.split(";");
+        if (bookDetails.length < 4) {
+            System.out.println("Error: Book data is incomplete.");
+            return;
+        }
     
-            System.out.println("\n--- Original Book Details ---");
-            System.out.println("Title: " + titleToEdit);
-            System.out.println("Author: " + authorToEdit);
-            System.out.println("ISBN: " + isbnToEdit);
-            System.out.println("Category: " + categoryToEdit);
+        String titleToEdit = bookDetails[0].trim();
+        String authorToEdit = bookDetails[1].trim();
+        String isbnToEdit = bookDetails[2].trim();
+        String categoryToEdit = bookDetails[3].trim();
     
-            List<Book> books = BookService.fetchBooks();
-            Book selectedBook = books.stream()
+        System.out.println("\n--- Original Book Details ---");
+        System.out.println("Title: " + titleToEdit);
+        System.out.println("Author: " + authorToEdit);
+        System.out.println("ISBN: " + isbnToEdit);
+        System.out.println("Category: " + categoryToEdit);
+    
+        // Run book fetching in a background thread
+        Task<Book> fetchTask = new Task<>() {
+            @Override
+            protected Book call() {
+                return BookService.fetchBooks().stream()
                     .filter(book -> book.getIsbn().equals(isbnToEdit))
                     .findFirst()
                     .orElse(null);
+            }
+        };
     
-            if (selectedBook != null) {
-                String idToEdit = selectedBook.getId();
-                EditBook eb = new EditBook();
-                String newDetails = eb.getResult();
+        fetchTask.setOnSucceeded(event -> {
+            Book selectedBook = fetchTask.getValue();
     
-                System.out.println("\nRaw newDetails input: " + newDetails);
+            if (selectedBook == null) {
+                System.out.println("Error: Book not found in the database.");
+                return;
+            }
     
-                if (newDetails != null) {
-                    String[] newBookDetails = newDetails.split(";");
-                    System.out.println("Split newBookDetails: " + Arrays.toString(newBookDetails));
+            String idToEdit = selectedBook.getId();
+            EditBook eb = new EditBook();
+            String newDetails = eb.getResult();
     
-                    if (newBookDetails.length < 4) {
-                        System.out.println("Error: New book data is incomplete.");
-                        return;
+            if (newDetails != null) {
+                String[] newBookDetails = newDetails.split(";");
+                if (newBookDetails.length < 4) {
+                    System.out.println("Error: New book data is incomplete.");
+                    return;
+                }
+    
+                // Ensure correct order: Title, Author, ISBN, Category
+                String newTitle = newBookDetails[0].trim();
+                String newAuthor = newBookDetails[1].trim();
+                String newIsbn = newBookDetails[2].trim();
+                String newCategory = newBookDetails[3].trim();
+    
+                System.out.println("\n--- Updated Book Details ---");
+                System.out.println("Title: " + newTitle);
+                System.out.println("Author: " + newAuthor);
+                System.out.println("ISBN: " + newIsbn);
+                System.out.println("Category: " + newCategory);
+    
+                // Run book update in a background thread
+                Task<String> updateTask = new Task<>() {
+                    @Override
+                    protected String call() {
+                        return BookService.editBook(idToEdit, newTitle, newAuthor, newIsbn, newCategory);
                     }
+                };
     
-                    // Ensure correct order: Title, Author, ISBN, Category
-                    String newTitle = newBookDetails[0].trim();
-                    String newAuthor = newBookDetails[1].trim();
-                    String newIsbn = newBookDetails[2].trim();
-                    String newCategory = newBookDetails[3].trim();
-    
-                    System.out.println("\n--- Updated Book Details ---");
-                    System.out.println("Title: " + newTitle);
-                    System.out.println("Author: " + newAuthor);
-                    System.out.println("ISBN: " + newIsbn);
-                    System.out.println("Category: " + newCategory);
-    
-                    String response = BookService.editBook(idToEdit, newTitle, newAuthor, newIsbn, newCategory);
-    
-                    if (response != null) {
+                updateTask.setOnSucceeded(updateEvent -> {
+                    if (updateTask.getValue() != null) {
                         System.out.println("Book successfully updated!");
-                        loadBooks(); // Reload books
+                        loadBooks(); // Reload books only after a successful update
                     } else {
                         System.out.println("Failed to edit book");
                     }
                     search.clear();
-                }
-            } else {
-                System.out.println("Error: Book not found in the database.");
+                });
+    
+                new Thread(updateTask).start();
             }
-        } else {
-            System.out.println("Error: No book selected for editing.");
-        }
+        });
+    
+        new Thread(fetchTask).start(); // Fetch book details in the background
     }
+    
 
     @FXML
     protected void deleteBook() throws IOException {
@@ -205,52 +225,68 @@ public class LibraryController implements Initializable {
 
     @FXML
     protected void addItem() throws IOException {
-    // Collect data from input fields
-    String titleText = book.getText();
-    String authorText = author.getText();
-    String isbnText = isbn.getText();
-    String categoryText = category.getText();
-
-    // Call backend to add the book
-    System.out.println("Sending book data: " + titleText + ", " + authorText + ", " + isbnText + ", " + categoryText);
-    String response = BookService.addBook(titleText, authorText, isbnText, categoryText);
-
-    if (response != null) {
-        System.out.println("Book added: " + response);
+        // Collect data from input fields
+        String titleText = book.getText().trim();
+        String authorText = author.getText().trim();
+        String isbnText = isbn.getText().trim();
+        String categoryText = category.getText().trim();
+    
+        // Validate input fields
+        if (titleText.isEmpty() || authorText.isEmpty() || isbnText.isEmpty() || categoryText.isEmpty()) {
+            System.out.println("Error: All fields must be filled.");
+            return;
+        }
+    
         System.out.println("Sending book data: " + titleText + ", " + authorText + ", " + isbnText + ", " + categoryText);
-        loadBooks(); // Reload books after adding
-    } else {
-        System.out.println("Failed to add book");
+    
+        // Run book addition in a background thread
+        Task<String> addBookTask = new Task<>() {
+            @Override
+            protected String call() {
+                return BookService.addBook(titleText, authorText, isbnText, categoryText);
+            }
+        };
+    
+        addBookTask.setOnSucceeded(event -> {
+            String response = addBookTask.getValue();
+    
+            if (response != null) {
+                System.out.println("Book added: " + response);
+                loadBooks(); // Reload books only if the addition is successful
+            } else {
+                System.out.println("Failed to add book");
+            }
+    
+            // Clear input fields after adding the book
+            author.clear();
+            book.clear();
+            isbn.clear();
+            category.clear();
+        });
+    
+        new Thread(addBookTask).start(); // Start background thread
     }
+    
 
-    // Clear input fields after adding the book
-    author.clear();
-    book.clear();
-    isbn.clear();
-    category.clear();
+
+private void loadBooks() {
+    Task<List<String>> loadTask = new Task<>() {
+        @Override
+        protected List<String> call() {
+            return BookService.fetchBooks().stream()
+                .map(book -> book.getTitle() + "; " + book.getAuthor() + "; " + book.getIsbn() + "; " + book.getCategory())
+                .toList();
+        }
+    };
+
+    loadTask.setOnSucceeded(event -> {
+        booksList.getItems().setAll(loadTask.getValue());
+        allBooks = loadTask.getValue(); // Cache for search optimization
+    });
+
+    new Thread(loadTask).start(); // Run in background
 }
 
-
-    public void loadBooks() {
-        // Fetch books from the backend using BookService
-        List<Book> books = BookService.fetchBooks();
-
-        allBooks = BookService.fetchBooks().stream()
-        .map(book -> book.getTitle() + "; " + book.getAuthor() + "; " + book.getIsbn() + "; " + book.getCategory())
-        .toList();
-
-    
-        if (books != null) {
-            // Update the ListView with the books (excluding _id)
-            List<String> bookStrings = new ArrayList<>();
-            for (Book bo : books) {
-                bookStrings.add(bo.getTitle() + "; " + bo.getAuthor() + "; " + bo.getIsbn() + "; " + bo.getCategory());
-            }
-            booksList.getItems().setAll(bookStrings);
-        } else {
-            System.out.println("Failed to load books from the server");
-        }
-    }
     
     
     
